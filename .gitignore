@@ -1,0 +1,21 @@
+# Maven
+target/
+*.class
+
+# IDEs
+.idea/
+*.iml
+.settings/
+.project
+.classpath
+build/
+
+# Logs & Temp
+logs/
+*.log
+temp/
+*.tmp
+
+# Database
+*.db
+*.trace.db
