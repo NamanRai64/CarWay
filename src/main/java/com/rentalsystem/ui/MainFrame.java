@@ -14,6 +14,7 @@ public class MainFrame extends JFrame {
     private static final Logger logger = LoggerFactory.getLogger(MainFrame.class);
     private JPanel contentPanel;
     private Vehicle selectedVehicle;
+    private int rentalDays = 1;
     private final Map<String, JButton> navButtons = new HashMap<>();
     private String currentCard = "DASHBOARD";
 
@@ -54,6 +55,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(new VehiclePanel(), "VEHICLES");
         contentPanel.add(new PaymentPanel(), "PAYMENTS");
         contentPanel.add(new RentalHistoryPanel(), "RENTALS");
+        contentPanel.add(new FleetManagementPanel(), "FLEET_ADMIN");
         contentPanel.add(new ProfilePanel(), "PROFILE");
         
         mainArea.add(contentPanel, BorderLayout.CENTER);
@@ -65,7 +67,7 @@ public class MainFrame extends JFrame {
     private JPanel createUnifiedSidebar() {
         JPanel sidebar = new JPanel(new GridBagLayout());
         sidebar.setPreferredSize(new Dimension(280, 0));
-        sidebar.setBackground(new Color(248, 250, 252));
+        sidebar.putClientProperty(FlatClientProperties.STYLE, "background: @background");
         sidebar.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
         
         GridBagConstraints gbc = new GridBagConstraints();
@@ -100,6 +102,7 @@ public class MainFrame extends JFrame {
         gbc.gridy++; sidebar.add(createNavBtn("Rental Fleet", "🚗", "VEHICLES"), gbc);
         gbc.gridy++; sidebar.add(createNavBtn("Payments", "💳", "PAYMENTS"), gbc);
         gbc.gridy++; sidebar.add(createNavBtn("History", "📝", "RENTALS"), gbc);
+        gbc.gridy++; sidebar.add(createNavBtn("Fleet Admin", "⚙️", "FLEET_ADMIN"), gbc);
 
         // --- SPACER ---
         gbc.weighty = 1; gbc.gridy++; sidebar.add(new JLabel(""), gbc);
@@ -154,7 +157,7 @@ public class MainFrame extends JFrame {
     public void showCard(String cardName) {
         if (cardName.equals("PAYMENTS") && selectedVehicle != null) {
             for (Component comp : contentPanel.getComponents()) {
-                if (comp instanceof PaymentPanel) ((PaymentPanel) comp).setSelectedVehicle(selectedVehicle);
+                if (comp instanceof PaymentPanel) ((PaymentPanel) comp).setSelectedVehicle(selectedVehicle, rentalDays);
             }
         }
         this.currentCard = cardName;
@@ -163,20 +166,28 @@ public class MainFrame extends JFrame {
         updateNavState();
     }
 
-    private void updateNavState() {
+    public void updateNavState() {
+        boolean isDark = UIManager.getLookAndFeel() instanceof com.formdev.flatlaf.FlatDarkLaf;
+        String activeBg = isDark ? "#334155" : "#FFFFFF";
+        String activeFg = isDark ? "#F8FAFC" : "#0F172A";
+        String inactiveFg = isDark ? "#94A3B8" : "#64748B";
+
         for (Map.Entry<String, JButton> entry : navButtons.entrySet()) {
             JButton btn = entry.getValue();
             if (entry.getKey().equals(currentCard)) {
                 btn.putClientProperty(FlatClientProperties.STYLE, 
-                    "background: #FFFFFF; foreground: #0F172A; arc: 15; height: 56; borderWidth: 0; focusWidth: 0; font: bold 16");
+                    "background: " + activeBg + "; foreground: " + activeFg + "; arc: 15; height: 56; borderWidth: 0; focusWidth: 0; font: bold 16");
                 btn.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
             } else {
                 btn.putClientProperty(FlatClientProperties.STYLE, 
-                    "background: transparent; foreground: #64748B; arc: 15; height: 56; borderWidth: 0; focusWidth: 0; font: plain 16");
+                    "background: transparent; foreground: " + inactiveFg + "; arc: 15; height: 56; borderWidth: 0; focusWidth: 0; font: plain 16");
                 btn.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
             }
         }
     }
 
-    public void setSelectedVehicle(Vehicle v) { this.selectedVehicle = v; }
+    public void setSelectedVehicle(Vehicle v, int days) { 
+        this.selectedVehicle = v; 
+        this.rentalDays = days;
+    }
 }

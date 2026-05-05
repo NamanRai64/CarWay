@@ -58,9 +58,14 @@ public class VehiclePanel extends JPanel {
         cbCategory.addActionListener(e -> applyFilters());
         cbPrice.addActionListener(e -> applyFilters());
 
+        JButton btnRefresh = new JButton("↻ Refresh");
+        btnRefresh.putClientProperty(FlatClientProperties.STYLE, "arc: 12; background: #6366F1; foreground: #FFFFFF; borderWidth: 0; padding: 5,10,5,10; font: bold 12");
+        btnRefresh.addActionListener(e -> loadVehicles());
+
         filters.add(new JLabel("Filter by:"));
         filters.add(cbCategory);
         filters.add(cbPrice);
+        filters.add(btnRefresh);
         
         header.add(filters, BorderLayout.EAST);
         add(header, BorderLayout.NORTH);
@@ -68,12 +73,15 @@ public class VehiclePanel extends JPanel {
 
     private void initGrid() {
         grid = new JPanel(new GridLayout(0, 3, 30, 30));
-        grid.setOpaque(false);
+        grid.putClientProperty(FlatClientProperties.STYLE, "background: @background");
+        grid.setOpaque(true);
         
         JScrollPane scroll = new JScrollPane(grid);
         scroll.setBorder(null);
-        scroll.setOpaque(false);
-        scroll.getViewport().setOpaque(false);
+        scroll.putClientProperty(FlatClientProperties.STYLE, "background: @background");
+        scroll.getViewport().putClientProperty(FlatClientProperties.STYLE, "background: @background");
+        scroll.setOpaque(true);
+        scroll.getViewport().setOpaque(true);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         
         add(scroll, BorderLayout.CENTER);
@@ -127,6 +135,8 @@ public class VehiclePanel extends JPanel {
         
         JPanel imgBox = new JPanel() {
             private BufferedImage img;
+            private BufferedImage scaledImg;
+            private int lastW, lastH;
             {
                 try (InputStream is = getClass().getResourceAsStream(v.getImageUrl())) {
                     if (is != null) img = ImageIO.read(is);
@@ -135,14 +145,21 @@ public class VehiclePanel extends JPanel {
             @Override protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 if (img != null) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                    g2.setClip(new java.awt.geom.RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 30, 30));
-                    double aspect = (double) img.getWidth() / img.getHeight();
-                    int w = getWidth(), h = (int)(w / aspect);
-                    if (h < getHeight()) { h = getHeight(); w = (int)(h * aspect); }
-                    g2.drawImage(img, (getWidth()-w)/2, (getHeight()-h)/2, w, h, null);
-                    g2.dispose();
+                    int w = getWidth(), h = getHeight();
+                    if (w <= 0 || h <= 0) return;
+                    if (w != lastW || h != lastH || scaledImg == null) {
+                        lastW = w; lastH = h;
+                        scaledImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D g2 = scaledImg.createGraphics();
+                        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                        g2.setClip(new java.awt.geom.RoundRectangle2D.Double(0, 0, w, h, 30, 30));
+                        double aspect = (double) img.getWidth() / img.getHeight();
+                        int drawW = w, drawH = (int)(w / aspect);
+                        if (drawH < h) { drawH = h; drawW = (int)(drawH * aspect); }
+                        g2.drawImage(img, (w-drawW)/2, (h-drawH)/2, drawW, drawH, null);
+                        g2.dispose();
+                    }
+                    g.drawImage(scaledImg, 0, 0, null);
                 }
             }
         };
@@ -177,9 +194,19 @@ public class VehiclePanel extends JPanel {
         btnRent.putClientProperty(FlatClientProperties.STYLE, btnStyle);
         
         btnRent.addActionListener(e -> {
-            MainFrame mf = (MainFrame) btnRent.getTopLevelAncestor();
-            mf.setSelectedVehicle(v);
-            mf.showCard("PAYMENTS");
+            String input = JOptionPane.showInputDialog(this, "Enter number of days for rental:", "Reservation", JOptionPane.QUESTION_MESSAGE);
+            if (input != null && !input.trim().isEmpty()) {
+                try {
+                    int days = Integer.parseInt(input.trim());
+                    if (days <= 0) throw new NumberFormatException();
+                    
+                    MainFrame mf = (MainFrame) btnRent.getTopLevelAncestor();
+                    mf.setSelectedVehicle(v, days);
+                    mf.showCard("PAYMENTS");
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Please enter a valid number of days (greater than 0).", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         });
         info.add(btnRent, gbc);
         

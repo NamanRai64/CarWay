@@ -23,6 +23,7 @@ public class PaymentPanel extends JPanel {
     private final VehicleRepository vehicleRepository = new VehicleRepository();
     
     private Vehicle selectedVehicle;
+    private int rentalDays = 1;
     private JLabel lblTotalPay, lblVehicleModel, lblVehicleRate;
 
     public PaymentPanel() {
@@ -31,12 +32,14 @@ public class PaymentPanel extends JPanel {
         initUI();
     }
 
-    public void setSelectedVehicle(Vehicle v) {
+    public void setSelectedVehicle(Vehicle v, int days) {
         this.selectedVehicle = v;
+        this.rentalDays = days;
         if (v != null) {
             lblVehicleModel.setText(v.getModel());
-            lblVehicleRate.setText(String.format("$%.2f", v.getBaseRate()));
-            lblTotalPay.setText(String.format("$%.2f", v.getBaseRate() * 1.2)); // Including 20% VAT
+            lblVehicleRate.setText(String.format("$%.2f x %d days", v.getBaseRate(), days));
+            double baseTotal = v.getBaseRate() * days;
+            lblTotalPay.setText(String.format("$%.2f", baseTotal * 1.2)); // Including 20% VAT
         }
     }
 
@@ -93,7 +96,7 @@ public class PaymentPanel extends JPanel {
         // Pay Button
         g.gridy++; g.insets = new Insets(50, 0, 0, 0);
         JButton btnPay = new JButton("Pay Now");
-        btnPay.putClientProperty(FlatClientProperties.STYLE, "arc: 20; height: 70; background: #2563EB; foreground: #FFF; font: 16; borderWidth: 0");
+        btnPay.putClientProperty(FlatClientProperties.STYLE, "arc: 20; height: 70; background: #0066FF; foreground: #FFF; font: 16; borderWidth: 0");
         btnPay.addActionListener(this::processPayment);
         p.add(btnPay, g);
 
@@ -215,7 +218,8 @@ public class PaymentPanel extends JPanel {
         if (selectedVehicle == null) return;
         new SwingWorker<Void, Void>() {
             @Override protected Void doInBackground() throws Exception {
-                rentalRepository.save(new Rental(0, selectedVehicle.getId(), 1, LocalDateTime.now(), LocalDateTime.now().plusDays(1), selectedVehicle.getBaseRate(), Rental.Status.ACTIVE));
+                double totalCost = selectedVehicle.getBaseRate() * rentalDays;
+                rentalRepository.save(new Rental(0, selectedVehicle.getId(), 1, LocalDateTime.now(), LocalDateTime.now().plusDays(rentalDays), totalCost, Rental.Status.ACTIVE));
                 vehicleRepository.updateStatus(selectedVehicle.getId(), Vehicle.Status.RENTED);
                 return null;
             }

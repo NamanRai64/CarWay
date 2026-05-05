@@ -1,6 +1,9 @@
 package com.rentalsystem.ui;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatLaf;
 import com.rentalsystem.config.DatabaseConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,12 +60,22 @@ public class ProfilePanel extends JPanel {
         txtLicense = createStyledField("Driver License");
         container.add(createLabelField("LICENSE NUMBER", txtLicense), gbc);
 
-        // Save Button
+        // Buttons Panel
         gbc.gridy++; gbc.insets = new Insets(20, 0, 0, 0);
+        JPanel btnPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        btnPanel.setOpaque(false);
+
         JButton btnSave = new JButton("Save Profile Changes");
-        btnSave.putClientProperty(FlatClientProperties.STYLE, "arc: 12; height: 56; background: #6366F1; foreground: #FFF; borderWidth: 0; font: 14");
+        btnSave.putClientProperty(FlatClientProperties.STYLE, "arc: 12; height: 56; background: #6366F1; foreground: #FFF; borderWidth: 0; font: bold 14");
         btnSave.addActionListener(e -> saveUserData());
-        container.add(btnSave, gbc);
+        btnPanel.add(btnSave);
+
+        JButton btnTheme = new JButton("Toggle Dark Mode 🌙");
+        btnTheme.putClientProperty(FlatClientProperties.STYLE, "arc: 12; height: 56; background: #1E293B; foreground: #FFF; borderWidth: 0; font: bold 14");
+        btnTheme.addActionListener(e -> toggleTheme());
+        btnPanel.add(btnTheme);
+
+        container.add(btnPanel, gbc);
 
         add(container, BorderLayout.NORTH);
     }
@@ -116,6 +129,24 @@ public class ProfilePanel extends JPanel {
         } catch (SQLException e) {
             logger.error("Failed to save user data", e);
             JOptionPane.showMessageDialog(this, "Error saving profile: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void toggleTheme() {
+        try {
+            if (UIManager.getLookAndFeel() instanceof FlatDarkLaf) {
+                UIManager.setLookAndFeel(new FlatLightLaf());
+            } else {
+                UIManager.setLookAndFeel(new FlatDarkLaf());
+            }
+            FlatLaf.updateUI();
+            
+            Container parent = getTopLevelAncestor();
+            if (parent instanceof MainFrame) {
+                ((MainFrame) parent).updateNavState();
+            }
+        } catch (Exception ex) {
+            logger.error("Failed to toggle theme", ex);
         }
     }
 }

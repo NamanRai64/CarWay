@@ -37,6 +37,42 @@ public class VehicleRepository {
         }
     }
 
+    public void insert(String type, String model, double rate, Vehicle.Status status, String imageUrl) throws SQLException {
+        String sql = "INSERT INTO vehicles (type, model, base_rate, status, image_url) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type);
+            ps.setString(2, model);
+            ps.setDouble(3, rate);
+            ps.setString(4, status.name());
+            ps.setString(5, imageUrl);
+            ps.executeUpdate();
+        }
+    }
+
+    public void update(int vehicleId, String type, String model, double rate, Vehicle.Status status, String imageUrl) throws SQLException {
+        String sql = "UPDATE vehicles SET type = ?, model = ?, base_rate = ?, status = ?, image_url = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type);
+            ps.setString(2, model);
+            ps.setDouble(3, rate);
+            ps.setString(4, status.name());
+            ps.setString(5, imageUrl);
+            ps.setInt(6, vehicleId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void delete(int vehicleId) throws SQLException {
+        String sql = "DELETE FROM vehicles WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, vehicleId);
+            ps.executeUpdate();
+        }
+    }
+
     private Vehicle mapToVehicle(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String type = rs.getString("type");
